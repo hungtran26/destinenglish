@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react'
 import { getAllTests, deleteTest } from '../lib/testStorage'
 
 /**
@@ -12,14 +13,45 @@ import { getAllTests, deleteTest } from '../lib/testStorage'
  * - Start / Delete buttons
  */
 export default function TestList({ onSelectTest, onGoAdmin }) {
-  const tests = getAllTests()
+  const [tests, setTests] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const handleDelete = (title) => {
-    if (window.confirm(`Delete test "${title}"? This cannot be undone.`)) {
-      deleteTest(title)
-      // Force re-render by toggling state in parent or using key
-      window.location.reload()
+  const loadTests = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await getAllTests()
+      setTests(data)
+    } catch (e) {
+      console.error("Failed to load tests:", e)
+    } finally {
+      setLoading(false)
     }
+  }, [])
+
+  useEffect(() => {
+    loadTests()
+  }, [loadTests])
+
+  const handleDelete = async (title) => {
+    if (window.confirm(`Delete test "${title}"? This cannot be undone.`)) {
+      try {
+        await deleteTest(title)
+        await loadTests()
+      } catch (e) {
+        alert("Delete failed: " + e.message)
+      }
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="test-list">
+        <div className="test-list-header">
+          <h2 className="test-list-title">Available Tests</h2>
+          <p className="test-list-subtitle">Loading tests...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

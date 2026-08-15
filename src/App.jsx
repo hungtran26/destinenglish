@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './App.css'
+import heroImg from './assets/hero.png'
 
 import { AuthProvider, useAuth } from './components/AuthProvider'
 import AuthPage from './components/AuthPage'
@@ -12,31 +13,69 @@ import TestResults from './components/TestResults'
 // Decorative Components
 // ─────────────────────────────────────────
 
-function FloatingKangaroos() {
-  const kangaroos = Array.from({ length: 12 }, (_, i) => ({
+function Sunshine() {
+  return <div className="sunshine" />
+}
+
+function Clouds() {
+  return (
+    <div className="clouds">
+      <div className="cloud cloud-1" />
+      <div className="cloud cloud-2" />
+      <div className="cloud cloud-3" />
+      <div className="cloud cloud-4" />
+      <div className="cloud cloud-5" />
+    </div>
+  )
+}
+
+function Grass() {
+  const blades = Array.from({ length: 80 }, (_, i) => ({
     id: i,
     left: Math.random() * 100,
-    delay: Math.random() * 20,
-    duration: 15 + Math.random() * 20,
-    size: 20 + Math.random() * 30,
-    opacity: 0.03 + Math.random() * 0.06
+    height: 30 + Math.random() * 40,
+    delay: Math.random() * 2
   }))
 
   return (
-    <div className="floating-kangaroos">
-      {kangaroos.map(k => (
+    <div className="grass-footer">
+      {blades.map(b => (
         <div
-          key={k.id}
-          className="floating-kangaroo"
+          key={b.id}
+          className="grass-blade"
           style={{
-            left: `${k.left}%`,
-            animationDelay: `${k.delay}s`,
-            animationDuration: `${k.duration}s`,
-            fontSize: `${k.size}px`,
-            opacity: k.opacity
+            left: `${b.left}%`,
+            height: `${b.height}px`,
+            animationDelay: `${b.delay}s`
           }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function Flowers() {
+  const flowers = [
+    { left: '5%', emoji: '🌸', delay: 0 },
+    { left: '15%', emoji: '🌼', delay: 0.5 },
+    { left: '25%', emoji: '🌷', delay: 1.2 },
+    { left: '35%', emoji: '🌻', delay: 0.8 },
+    { left: '55%', emoji: '🌸', delay: 1.5 },
+    { left: '65%', emoji: '🌼', delay: 0.3 },
+    { left: '75%', emoji: '🌷', delay: 1.0 },
+    { left: '85%', emoji: '🌻', delay: 0.7 },
+    { left: '95%', emoji: '🌸', delay: 1.3 }
+  ]
+
+  return (
+    <div className="flowers">
+      {flowers.map((f, i) => (
+        <div
+          key={i}
+          className="flower"
+          style={{ left: f.left, animationDelay: `${f.delay}s` }}
         >
-          🦘
+          {f.emoji}
         </div>
       ))}
     </div>
@@ -44,12 +83,14 @@ function FloatingKangaroos() {
 }
 
 function Particles() {
-  const particles = Array.from({ length: 30 }, (_, i) => ({
+  const colors = ['#3B9AE8', '#4CAF50', '#FFD93D', '#FF6B9D', '#FF9800', '#81C784']
+  const particles = Array.from({ length: 25 }, (_, i) => ({
     id: i,
     left: Math.random() * 100,
     delay: Math.random() * 8,
     duration: 3 + Math.random() * 5,
-    size: 2 + Math.random() * 6
+    size: 3 + Math.random() * 8,
+    color: colors[i % colors.length]
   }))
 
   return (
@@ -63,21 +104,11 @@ function Particles() {
             animationDelay: `${p.delay}s`,
             animationDuration: `${p.duration}s`,
             width: `${p.size}px`,
-            height: `${p.size}px`
+            height: `${p.size}px`,
+            background: p.color
           }}
         />
       ))}
-    </div>
-  )
-}
-
-function GlowOrbs() {
-  return (
-    <div className="glow-orbs">
-      <div className="glow-orb orb-1" />
-      <div className="glow-orb orb-2" />
-      <div className="glow-orb orb-3" />
-      <div className="glow-orb orb-4" />
     </div>
   )
 }
@@ -89,13 +120,15 @@ function GlowOrbs() {
 function LandingPage({ onStart, onGoAdmin }) {
   return (
     <div className="landing-page">
-      <GlowOrbs />
-      <FloatingKangaroos />
+      <Sunshine />
+      <Clouds />
+      <Grass />
+      <Flowers />
       <Particles />
 
       <div className="landing-content">
         <div className="kangaroo-hero">
-          <div className="kangaroo-main">🦘</div>
+          <img src={heroImg} alt="Kangaroo mascot" className="kangaroo-main-img" />
           <div className="kangaroo-shadow" />
         </div>
 
@@ -115,7 +148,7 @@ function LandingPage({ onStart, onGoAdmin }) {
         </button>
 
         <button className="admin-link" onClick={onGoAdmin}>
-          🔧 Admin Panel
+          Admin Panel
         </button>
       </div>
     </div>
@@ -162,9 +195,10 @@ function AppContent() {
   if (loading) {
     return (
       <div className="app">
-        <GlowOrbs />
+        <Sunshine />
+        <Clouds />
         <div className="loading-screen">
-          <div className="loading-kangaroo">🦘</div>
+          <img src={heroImg} alt="" className="kangaroo-main-img" style={{ width: 120, height: 120 }} />
           <p>Loading...</p>
         </div>
       </div>
@@ -183,7 +217,6 @@ function AppContent() {
     if (!user) {
       setPage(PAGES.AUTH)
     } else if (!isAdmin) {
-      // Non-admin users cannot access admin
       alert("Admin access required.")
     } else {
       setPage(PAGES.ADMIN)
@@ -236,18 +269,20 @@ function AppContent() {
 
       {page === PAGES.TEST_LIST && (
         <>
-          <GlowOrbs />
-          <FloatingKangaroos />
+          <Sunshine />
+          <Clouds />
+          <Grass />
+          <Flowers />
           <UserHeader />
           <div className="page-container">
             <TestList onSelectTest={handleSelectTest} onGoAdmin={handleGoAdmin} />
             <div className="page-footer">
               <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
-                ← Home
+                Home
               </button>
               {isAdmin && (
                 <button className="admin-btn admin-btn-ghost" onClick={handleGoAdmin}>
-                  🔧 Admin
+                  Admin
                 </button>
               )}
             </div>
@@ -257,8 +292,10 @@ function AppContent() {
 
       {page === PAGES.ADMIN && isAdmin && (
         <>
-          <GlowOrbs />
-          <FloatingKangaroos />
+          <Sunshine />
+          <Clouds />
+          <Grass />
+          <Flowers />
           <UserHeader />
           <div className="page-container">
             <AdminImport onImportComplete={handleImportComplete} onBack={handleHome} />

@@ -47,8 +47,8 @@ export function validateImportBlob(blob) {
   }
 
   // Schema version
-  if (blob.schema_version !== "1.0") {
-    errors.push(`Invalid schema_version: "${blob.schema_version}". Expected "1.0".`)
+  if (blob.schema_version !== "1.1") {
+    errors.push(`Invalid schema_version: "${blob.schema_version}". Expected "1.1".`)
   }
 
   // Test

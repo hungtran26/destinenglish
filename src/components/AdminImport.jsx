@@ -18,6 +18,7 @@ export default function AdminImport({ onImportComplete, onBack }) {
   const [parsedBlob, setParsedBlob] = useState(null)
   const [errors, setErrors] = useState([])
   const [importSuccess, setImportSuccess] = useState(false)
+  const [importing, setImporting] = useState(false)
   const [parseError, setParseError] = useState("")
 
   const handleCopyPrompt = async () => {
@@ -62,14 +63,17 @@ export default function AdminImport({ onImportComplete, onBack }) {
     }
   }
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (!parsedBlob) return
+    setImporting(true)
     try {
-      saveTest(parsedBlob)
+      await saveTest(parsedBlob)
       setImportSuccess(true)
       setStep(STEPS.IMPORT)
     } catch (e) {
       setErrors([e.message])
+    } finally {
+      setImporting(false)
     }
   }
 
@@ -232,8 +236,8 @@ export default function AdminImport({ onImportComplete, onBack }) {
               ))}
             </div>
             <div className="admin-actions">
-              <button className="admin-btn admin-btn-primary" onClick={handleImport}>
-                🎉 Import Test
+              <button className="admin-btn admin-btn-primary" onClick={handleImport} disabled={importing}>
+                {importing ? "Importing..." : "🎉 Import Test"}
               </button>
               <button className="admin-btn admin-btn-ghost" onClick={() => setStep(STEPS.PASTE)}>
                 ← Edit Blob
