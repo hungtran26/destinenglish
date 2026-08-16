@@ -160,7 +160,7 @@ function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult 
           <div className="q-prompt">
             {parts.map((part, i) => (
               <span key={i}>
-                {part}
+                <TextWithInlineImages text={part} />
                 {i < parts.length - 1 && (
                   <input
                     type="text"
@@ -177,9 +177,13 @@ function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult 
               </span>
             ))}
           </div>
-          {showResult && !answer && (
+          {showResult && (
             <div className="q-answer-reveal">
-              Correct answer: <strong>{accepted[0]}</strong>
+              {answer && accepted.some(a => a.toLowerCase().trim() === String(answer).toLowerCase().trim()) ? (
+                <span className="q-correct-label">✓ Correct!</span>
+              ) : (
+                <span>Correct answer: <strong>{accepted[0]}</strong></span>
+              )}
             </div>
           )}
         </div>
@@ -189,7 +193,7 @@ function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult 
     // No blanks: show prompt text + a single input below
     return (
       <div className="q-fill-blank">
-        <div className="q-prompt">{promptText}</div>
+        <div className="q-prompt"><TextWithInlineImages text={promptText} /></div>
         <input
           type="text"
           className={`q-blank-input q-blank-full ${showResult
@@ -242,7 +246,7 @@ function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult 
       <div className="q-prompt">
         {parts.map((part, i) => (
           <span key={i}>
-            {part}
+            <TextWithInlineImages text={part} />
             {i < parts.length - 1 && i < numBlanks && (
               <input
                 type="text"
@@ -265,6 +269,112 @@ function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult 
           ) : (
             <span>
               Correct answer: <strong>{blanks.map(b => (b.accepted || [])[0] || "").join(" / ")}</strong>
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────
+// FillBlankPassageQuestion — continuous passage with numbered blanks
+// ─────────────────────────────────────────
+
+/**
+ * Render text that may contain [IMAGE N] inline image references.
+ * After placeholder replacement, these become actual URLs.
+ */
+function TextWithInlineImages({ text }) {
+  if (!text) return null
+  const parts = text.split(/(\[IMAGE\s+\d+\])/g)
+  return (
+    <>
+      {parts.map((part, i) => {
+        const imgMatch = part.match(/^\[IMAGE\s+(\d+)\]$/)
+        if (imgMatch) {
+          return <img key={i} src={part} alt={`Image ${imgMatch[1]}`} className="cb-inline-image" />
+        }
+        return <span key={i}>{part}</span>
+      })}
+    </>
+  )
+}
+
+function FillBlankPassageQuestion({ question, exerciseId, answer, onAnswer, showResult }) {
+  const blanks = question.blanks || []
+  const numBlanks = blanks.length
+  const passage = question.passage || ""
+
+  // Split passage into paragraphs on double newlines
+  const paragraphs = passage.split(/\n\n+/)
+
+  // Split each paragraph on ___ to get text segments and blank positions
+  // We need a global blank counter across paragraphs
+  let blankIndex = 0
+  const studentAnswers = Array.isArray(answer) ? answer : Array(numBlanks).fill("")
+
+  const blankResults = blanks.map((blank, i) => {
+    const val = studentAnswers[i] || ""
+    const acc = blank.accepted || []
+    return acc.some(a => a.toLowerCase().trim() === val.toLowerCase().trim())
+  })
+  const allCorrect = blanks.length > 0 && blankResults.every(Boolean)
+
+  const updateBlank = (index, newValue) => {
+    const newAnswers = [...studentAnswers]
+    while (newAnswers.length <= index) newAnswers.push("")
+    newAnswers[index] = newValue
+    onAnswer(newAnswers)
+  }
+
+  return (
+    <div className="q-fill-blank-passage">
+      {paragraphs.map((para, pIdx) => {
+        const parts = para.split(/___+/)
+        const paraBlanks = parts.length - 1
+        const elements = []
+
+        for (let i = 0; i < parts.length; i++) {
+          if (parts[i]) {
+            elements.push(<span key={`t-${pIdx}-${i}`}><TextWithInlineImages text={parts[i]} /></span>)
+          }
+          if (i < paraBlanks) {
+            const bi = blankIndex
+            blankIndex++
+            const blank = blanks[bi] || {}
+            elements.push(
+              <span key={`b-${pIdx}-${i}`} className="passage-blank-wrapper">
+                <span className="passage-blank-number">({blank.number || bi + 1})</span>
+                <input
+                  type="text"
+                  className={`q-blank-input passage-blank-input ${showResult
+                    ? (blankResults[bi] ? "blank-correct" : "blank-wrong")
+                    : ""}`}
+                  value={studentAnswers[bi] || ""}
+                  onChange={(e) => updateBlank(bi, e.target.value)}
+                  placeholder="..."
+                  disabled={showResult}
+                />
+              </span>
+            )
+          }
+        }
+
+        return (
+          <p key={pIdx} className="passage-paragraph">
+            {elements}
+          </p>
+        )
+      })}
+
+      {showResult && (
+        <div className="q-answer-reveal">
+          {allCorrect ? (
+            <span className="q-correct-label">✓ Correct!</span>
+          ) : (
+            <span>
+              Correct answers: <strong>{blanks.map(b => (b.accepted || [])[0] || "").join(" / ")}</strong>
             </span>
           )}
         </div>
@@ -719,6 +829,8 @@ function QuestionRenderer({ question, exerciseId, answer, onAnswer, showResult }
   switch (question.type) {
     case "fill-blank":
       return <FillBlankQuestion question={question} exerciseId={exerciseId} answer={answer} onAnswer={onAnswer} showResult={showResult} />
+    case "fill-blank-passage":
+      return <FillBlankPassageQuestion question={question} exerciseId={exerciseId} answer={answer} onAnswer={onAnswer} showResult={showResult} />
     case "multiple-choice":
       return <MultipleChoiceQuestion question={question} exerciseId={exerciseId} answer={answer} onAnswer={onAnswer} showResult={showResult} />
     case "rewrite":

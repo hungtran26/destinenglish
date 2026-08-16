@@ -53,9 +53,24 @@
  *
  * { type: "text", value: FormattedText }
  * { type: "image", src: string, alt?: string }
+ *   - src can be a real URL or an image placeholder like "[IMAGE 1]"
+ *   - Placeholders are replaced with actual URLs during admin import
  * { type: "example", value: FormattedText }
  * { type: "word_bank", words: string[] }
  * { type: "table", rows: string[][] }
+ *
+ * ─────────────────────────────────────────────
+ * IMAGE PLACEHOLDERS
+ * ─────────────────────────────────────────────
+ *
+ * The external AI may output [IMAGE N] placeholders in:
+ * - Content blocks: { type: "image", src: "[IMAGE N]" }
+ * - Text strings: "Some text [IMAGE 1] more text"
+ * - Passage strings: "Amber (1) ___ up early. [IMAGE 2] The sun..."
+ *
+ * The admin import flow replaces these with actual uploaded image URLs.
+ * The placeholder number is scoped per test (not global).
+ * Duplicate [IMAGE N] references show the same uploaded image.
  *
  * ─────────────────────────────────────────────
  * QUESTIONS — COMMON FIELDS
@@ -77,6 +92,17 @@
  *   prompt: FormattedText,      // text with ___ marking the blank
  *   blank_text?: string,
  *   answer: AnswerKey
+ * }
+ *
+ * fill-blank-passage (continuous passage with numbered blanks):
+ * {
+ *   id, type: "fill-blank-passage",
+ *   number?: number,
+ *   passage: string,            // full passage text with ___ at each blank position
+ *   blanks: [                   // one entry per blank, in order
+ *     { number: number, accepted: string[] },
+ *     ...
+ *   ]
  * }
  *
  * multiple-choice:

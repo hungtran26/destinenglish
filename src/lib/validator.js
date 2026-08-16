@@ -5,7 +5,7 @@
  * Returns { valid: boolean, errors: string[] }
  */
 
-const VALID_QUESTION_TYPES = ["fill-blank", "multiple-choice", "rewrite", "error-correction", "circle"]
+const VALID_QUESTION_TYPES = ["fill-blank", "fill-blank-passage", "multiple-choice", "rewrite", "error-correction", "circle"]
 const VALID_CONTENT_TYPES = ["text", "image", "example", "word_bank", "table"]
 
 /**
@@ -220,6 +220,24 @@ function validateQuestion(q, prefix, errors) {
         })
       } else {
         validateAnswerKey(q.answer, "answer", prefix, errors)
+      }
+      break
+
+    case "fill-blank-passage":
+      if (!q.passage || typeof q.passage !== "string") {
+        errors.push(`${prefix}: 'passage' is required and must be a string.`)
+      }
+      if (!Array.isArray(q.blanks) || q.blanks.length === 0) {
+        errors.push(`${prefix}: 'blanks' must be a non-empty array.`)
+      } else {
+        q.blanks.forEach((blank, i) => {
+          if (typeof blank.number !== "number") {
+            errors.push(`${prefix}: blanks[${i}].number must be a number.`)
+          }
+          if (!blank.accepted || !Array.isArray(blank.accepted) || blank.accepted.length === 0) {
+            errors.push(`${prefix}: blanks[${i}].accepted must be a non-empty array of strings.`)
+          }
+        })
       }
       break
 

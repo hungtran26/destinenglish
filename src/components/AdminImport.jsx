@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { validateImportBlob } from '../lib/validator'
 import { saveTest } from '../lib/testStorage'
 import { CONVERSION_PROMPT } from '../lib/conversionPrompt'
+import { detectImagePlaceholders, uploadImage, replacePlaceholders } from '../lib/imageStorage'
 import ExerciseRenderer from './ExerciseRenderer'
 import heroImg from '../assets/hero.png'
 
@@ -9,6 +10,7 @@ const STEPS = {
   PROMPT: "prompt",
   PASTE: "paste",
   VALIDATE: "validate",
+  IMAGES: "images",
   PREVIEW: "preview",
   IMPORT: "import"
 }
@@ -21,6 +23,14 @@ export default function AdminImport({ onImportComplete, onBack }) {
   const [importSuccess, setImportSuccess] = useState(false)
   const [importing, setImporting] = useState(false)
   const [parseError, setParseError] = useState("")
+
+  // Image state
+  const [detectedImages, setDetectedImages] = useState([])
+  const [imageFiles, setImageFiles] = useState({})
+  const [imagePreviews, setImagePreviews] = useState({})
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [imageError, setImageError] = useState("")
+  const fileInputRefs = useRef({})
 
   const handleCopyPrompt = async () => {
     try {
@@ -60,8 +70,89 @@ export default function AdminImport({ onImportComplete, onBack }) {
     const result = validateImportBlob(parsedBlob)
     setErrors(result.errors)
     if (result.valid) {
-      setStep(STEPS.PREVIEW)
+      // Detect image placeholders
+      const images = detectImagePlaceholders(parsedBlob)
+      setDetectedImages(images)
+      if (images.length > 0) {
+        setStep(STEPS.IMAGES)
+      } else {
+        setStep(STEPS.PREVIEW)
+      }
     }
+  }
+
+  const handleImageSelect = (imageNum, file) => {
+    setImageError("")
+    const url = URL.createObjectURL(file)
+    setImageFiles(prev => ({ ...prev, [imageNum]: file }))
+    setImagePreviews(prev => ({ ...prev, [imageNum]: url }))
+  }
+
+  const handleImageRemove = (imageNum) => {
+    if (imagePreviews[imageNum]) {
+      URL.revokeObjectURL(imagePreviews[imageNum])
+    }
+    setImageFiles(prev => {
+      const next = { ...prev }
+      delete next[imageNum]
+      return next
+    })
+    setImagePreviews(prev => {
+      const next = { ...prev }
+      delete next[imageNum]
+      return next
+    })
+  }
+
+  const handlePasteImage = useCallback((imageNum, e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (const item of items) {
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile()
+        if (file) {
+          handleImageSelect(imageNum, file)
+          e.preventDefault()
+          break
+        }
+      }
+    }
+  }, [])
+
+  const handleProceedWithImages = async () => {
+    setImageError("")
+
+    // Check all required images are uploaded
+    const missing = detectedImages.filter(n => !imageFiles[n])
+    if (missing.length > 0) {
+      setImageError(`Missing image(s): ${missing.map(n => `IMAGE ${n}`).join(", ")}. Upload all images before proceeding.`)
+      return
+    }
+
+    setUploadingImages(true)
+    try {
+      const title = parsedBlob.test.title
+      const urlMap = {}
+
+      for (const num of detectedImages) {
+        const file = imageFiles[num]
+        const url = await uploadImage(file, title, num)
+        urlMap[num] = url
+      }
+
+      // Replace placeholders in the blob
+      const updatedBlob = replacePlaceholders(parsedBlob, urlMap)
+      setParsedBlob(updatedBlob)
+      setStep(STEPS.PREVIEW)
+    } catch (e) {
+      setImageError(`Upload failed: ${e.message}`)
+    } finally {
+      setUploadingImages(false)
+    }
+  }
+
+  const handleSkipImages = () => {
+    setStep(STEPS.PREVIEW)
   }
 
   const handleImport = async () => {
@@ -84,8 +175,14 @@ export default function AdminImport({ onImportComplete, onBack }) {
     setErrors([])
     setParseError("")
     setImportSuccess(false)
+    setDetectedImages([])
+    setImageFiles({})
+    setImagePreviews({})
+    setImageError("")
     setStep(STEPS.PASTE)
   }
+
+  const allImagesUploaded = detectedImages.length > 0 && detectedImages.every(n => imageFiles[n])
 
   return (
     <div className="admin-import">
@@ -95,10 +192,11 @@ export default function AdminImport({ onImportComplete, onBack }) {
           { key: STEPS.PROMPT, label: "1. Copy Prompt" },
           { key: STEPS.PASTE, label: "2. Paste Blob" },
           { key: STEPS.VALIDATE, label: "3. Validate" },
-          { key: STEPS.PREVIEW, label: "4. Preview" },
-          { key: STEPS.IMPORT, label: "5. Import" }
+          ...(detectedImages.length > 0 ? [{ key: STEPS.IMAGES, label: "4. Images" }] : []),
+          { key: STEPS.PREVIEW, label: detectedImages.length > 0 ? "5. Preview" : "4. Preview" },
+          { key: STEPS.IMPORT, label: detectedImages.length > 0 ? "6. Import" : "5. Import" }
         ].map((s) => {
-          const stepOrder = [STEPS.PROMPT, STEPS.PASTE, STEPS.VALIDATE, STEPS.PREVIEW, STEPS.IMPORT]
+          const stepOrder = [STEPS.PROMPT, STEPS.PASTE, STEPS.VALIDATE, STEPS.IMAGES, STEPS.PREVIEW, STEPS.IMPORT]
           const currentIdx = stepOrder.indexOf(step)
           const sIdx = stepOrder.indexOf(s.key)
           return (
@@ -199,8 +297,8 @@ export default function AdminImport({ onImportComplete, onBack }) {
             )}
             <div className="admin-actions">
               {errors.length === 0 && (
-                <button className="admin-btn admin-btn-primary" onClick={() => setStep(STEPS.PREVIEW)}>
-                  Preview Test →
+                <button className="admin-btn admin-btn-primary" onClick={handleValidate}>
+                  Continue →
                 </button>
               )}
               <button className="admin-btn admin-btn-ghost" onClick={() => setStep(STEPS.PASTE)}>
@@ -210,7 +308,93 @@ export default function AdminImport({ onImportComplete, onBack }) {
           </div>
         )}
 
-        {/* STEP 4: Preview */}
+        {/* STEP 4: Image Upload */}
+        {step === STEPS.IMAGES && (
+          <div className="admin-panel">
+            <h2 className="admin-panel-title">🖼️ Image Upload</h2>
+            <p className="admin-panel-desc">
+              {detectedImages.length} image placeholder(s) detected in the blob. Upload an image for each placeholder.
+            </p>
+
+            <div className="image-upload-list">
+              {detectedImages.map(num => (
+                <div key={num} className="image-upload-slot">
+                  <div className="image-slot-header">
+                    <span className="image-slot-label">IMAGE {num}</span>
+                    {imageFiles[num] && (
+                      <span className="image-slot-status uploaded">Uploaded</span>
+                    )}
+                  </div>
+
+                  {imagePreviews[num] ? (
+                    <div className="image-preview-container">
+                      <img src={imagePreviews[num]} alt={`IMAGE ${num}`} className="image-preview" />
+                      <div className="image-preview-actions">
+                        <button
+                          className="admin-btn admin-btn-ghost admin-btn-sm"
+                          onClick={() => fileInputRefs.current[num]?.click()}
+                        >
+                          Replace
+                        </button>
+                        <button
+                          className="admin-btn admin-btn-ghost admin-btn-sm admin-btn-danger"
+                          onClick={() => handleImageRemove(num)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className="image-dropzone"
+                      onClick={() => fileInputRefs.current[num]?.click()}
+                      onPaste={(e) => handlePasteImage(num, e)}
+                      tabIndex={0}
+                    >
+                      <div className="dropzone-icon">📷</div>
+                      <p className="dropzone-text">Click to upload or paste image</p>
+                      <p className="dropzone-hint">PNG, JPG, WebP</p>
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    ref={el => fileInputRefs.current[num] = el}
+                    style={{ display: "none" }}
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleImageSelect(num, file)
+                      e.target.value = ""
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {imageError && (
+              <div className="admin-error">{imageError}</div>
+            )}
+
+            <div className="admin-actions">
+              <button
+                className="admin-btn admin-btn-primary"
+                onClick={handleProceedWithImages}
+                disabled={uploadingImages || !allImagesUploaded}
+              >
+                {uploadingImages ? "Uploading..." : allImagesUploaded ? "Upload & Continue →" : "Upload all images to continue"}
+              </button>
+              <button className="admin-btn admin-btn-ghost" onClick={handleSkipImages}>
+                Skip (no images)
+              </button>
+              <button className="admin-btn admin-btn-ghost" onClick={() => setStep(STEPS.PASTE)}>
+                ← Edit Blob
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 5: Preview */}
         {step === STEPS.PREVIEW && parsedBlob && (
           <div className="admin-panel admin-panel-wide">
             <h2 className="admin-panel-title">👁️ Preview</h2>
@@ -247,7 +431,7 @@ export default function AdminImport({ onImportComplete, onBack }) {
           </div>
         )}
 
-        {/* STEP 5: Import Complete */}
+        {/* STEP 6: Import Complete */}
         {step === STEPS.IMPORT && importSuccess && (
           <div className="admin-panel">
             <h2 className="admin-panel-title">🎉 Import Complete!</h2>
@@ -265,6 +449,9 @@ export default function AdminImport({ onImportComplete, onBack }) {
                 setParsedBlob(null)
                 setErrors([])
                 setImportSuccess(false)
+                setDetectedImages([])
+                setImageFiles({})
+                setImagePreviews({})
                 setStep(STEPS.PROMPT)
               }}>
                 Import Another Test

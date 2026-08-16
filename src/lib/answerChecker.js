@@ -211,6 +211,9 @@ export function checkAnswer(question, studentAnswer) {
     case "fill-blank":
       return checkFillBlank(studentAnswer, question)
 
+    case "fill-blank-passage":
+      return checkFillBlank(studentAnswer, question)
+
     case "multiple-choice":
       return checkMultipleChoice(studentAnswer, question.answer)
 

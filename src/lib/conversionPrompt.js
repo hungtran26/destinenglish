@@ -69,6 +69,28 @@ TYPE: "fill-blank"
 - When the prompt uses / to separate word prompts (not choices), the student writes a full sentence using those words
 - CRITICAL: For multi-blank questions, use "blanks" array NOT "answer". Each blank is a separate object with its own "accepted" array
 
+TYPE: "fill-blank-passage"
+- Instructions say "Complete the passage" or "Fill in the blanks in the passage" or similar
+- The source is a CONTINUOUS PASSAGE with numbered blanks like (1), (2), (3) etc.
+- CRITICAL: This is ONE passage, NOT separate questions. The numbers identify BLANKS, not questions.
+- The passage has ONE question containing the full text and all blanks.
+- Structure:
+  {
+    "id": 1,
+    "type": "fill-blank-passage",
+    "passage": "One morning, Amber ___ up early. The sun ___ and the birds ___.",
+    "blanks": [
+      { "number": 1, "accepted": ["got"] },
+      { "number": 2, "accepted": ["was shining"] },
+      { "number": 3, "accepted": ["were singing"] }
+    ]
+  }
+- The "passage" string uses ___ for each blank position. Preserve ALL original text, paragraphs (use \\n\\n), punctuation, and quotation marks.
+- The "blanks" array lists each blank in order with its number and accepted answers.
+- Each blank is independently answerable.
+- ANSWER KEY: The answer key maps to blanks IN ORDER. If the answer key says "1 got, 2 was shining, 3 were singing", the first answer goes to blank 1, second to blank 2, etc.
+- HOW TO DETECT: If the source shows a continuous paragraph/story with blanks numbered like (1), (2), (3) embedded in the text, this is a passage exercise. If each blank is in a separate sentence/question, use "fill-blank" instead.
+
 TYPE: "multiple-choice"
 - Instructions say "Choose the correct..." or "Which..." with listed options
 - prompt is the question, options are the choices, answer is the correct index (0-based)
@@ -121,6 +143,9 @@ ANSWER KEY FORMATS:
 - For fill-blank (multi blank): blanks = [{ "accepted": ["answer1"] }, { "accepted": ["answer2"] }]
   - The "blanks" array replaces "answer" when there are multiple blanks in one question
   - Each element in the blanks array corresponds to one blank IN ORDER from left to right
+- For fill-blank-passage: blanks = [{ "number": 1, "accepted": ["answer1"] }, { "number": 2, "accepted": ["answer2"] }]
+  - Each blank has its number (matching the source numbering) and accepted answers
+  - The passage string uses ___ at each blank position
 - For multiple-choice/circle: answer = index number (0-based)
 - For rewrite: answer = { "accepted": ["correct version"] }
 - For error-correction: errors = [{ "wrong": "...", "correct": "..." }]
@@ -128,7 +153,35 @@ ANSWER KEY FORMATS:
 - Example multi-blank answer key: "Are/watching" → blanks = [{ "accepted": ["Are"] }, { "accepted": ["watching"] }]
 - Example single-blank with alternatives: "has/has got" → answer = { "accepted": ["has", "has got"] }
 
-IMPORTANT: If an answer key is provided with the test, use it to populate the answer fields. Do NOT guess answers. If no answer key is provided, make your best reasonable guess based on standard English grammar rules.`
+IMPORTANT: If an answer key is provided with the test, use it to populate the answer fields. Do NOT guess answers. If no answer key is provided, make your best reasonable guess based on standard English grammar rules.
+
+IMAGE PLACEHOLDERS:
+The administrator may provide explicit image placement instructions such as:
+
+[IMAGE 1] → Exercise A
+[IMAGE 2] → Exercise B
+[IMAGE 3] → Exercise E
+
+When instructed to place an image, insert the exact placeholder [IMAGE N] into the generated structured content at the specified location.
+
+RULES FOR IMAGE PLACEHOLDERS:
+- The placeholder MUST be the exact text: [IMAGE N] where N is a positive integer
+- Do NOT generate image URLs or Markdown images
+- Do NOT change the placeholder syntax or add extra formatting
+- Do NOT describe the image content — just insert the placeholder
+- The placeholder number is authoritative and must be preserved exactly
+- The same placeholder can appear in multiple places (both references show the same image)
+- If no image placement instructions are provided, do NOT invent image placeholders
+- Place the placeholder at the exact structural position the administrator specified (above instructions, between instructions and questions, etc.)
+
+WHERE TO PLACE IMAGE PLACEHOLDERS:
+If the image belongs above exercise instructions, place [IMAGE N] as a content block before the instruction.
+If the image belongs between instructions and questions, place [IMAGE N] as a content block after the instruction.
+If the image belongs within a passage or question text, place [IMAGE N] directly in the text string at the correct position.
+
+CONTENT BLOCK FORMAT:
+Use a content block: { "type": "image", "src": "[IMAGE N]", "alt": "description" }
+Or if embedded in a text string, just write [IMAGE N] inline in the string.`
 
 /**
  * Get the single conversion prompt.
