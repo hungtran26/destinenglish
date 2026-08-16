@@ -433,58 +433,74 @@ function ErrorCorrectionTask({ question, exerciseId, answer, onAnswer, showResul
     const sel = window.getSelection()
     if (!sel || sel.isCollapsed) return
 
-    const selectedText = sel.toString().trim()
+    const selectedText = sel.toString()
     if (!selectedText || selectedText.length < 1) return
 
-    // Find the position in the source text
     const range = sel.getRangeAt(0)
-
-    // Calculate start offset relative to paragraph text
     const paragraph = paragraphRef.current
     if (!paragraph) return
 
-    // Walk text nodes to find the offset
-    let startOffset = 0
-    let foundStart = false
-    let endOffset = 0
-
-    const walker = document.createTreeWalker(
-      paragraph,
-      NodeFilter.SHOW_TEXT,
-      null,
-      false
-    )
-
-    let node
-    while (node = walker.nextNode()) {
-      const nodeLen = node.textContent.length
-
-      if (!foundStart && node === range.startContainer) {
-        startOffset += range.startOffset
-        foundStart = true
-      }
-
-      if (node === range.endContainer) {
-        endOffset = startOffset + (foundStart ? 0 : 0) + range.endOffset
-        // Recalculate endOffset properly
-        // We need the absolute position
-        break
-      }
-
-      if (!foundStart) {
-        startOffset += nodeLen
+    // TreeWalker filter: exclude highlight decoration elements
+    const filter = {
+      acceptNode(node) {
+        let el = node.parentElement
+        while (el && el !== paragraph) {
+          if (el.classList && (el.classList.contains('ec-highlight-number') || el.classList.contains('ec-highlight-remove'))) {
+            return NodeFilter.FILTER_REJECT
+          }
+          el = el.parentElement
+        }
+        return NodeFilter.FILTER_ACCEPT
       }
     }
 
-    // Simpler approach: use the full paragraph text and find the selection
-    const fullText = paragraph.textContent || paragraph.innerText
-    const selStart = fullText.indexOf(selectedText)
-    if (selStart === -1) return
+    const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT, filter, false)
+
+    let startOffset = -1
+    let endOffset = -1
+    let currentOffset = 0
+    let node
+
+    while ((node = walker.nextNode())) {
+      const nodeLen = node.textContent.length
+
+      if (node === range.startContainer) {
+        startOffset = currentOffset + range.startOffset
+      }
+
+      if (node === range.endContainer) {
+        endOffset = currentOffset + range.endOffset
+        break
+      }
+
+      currentOffset += nodeLen
+    }
+
+    if (startOffset === -1 || endOffset === -1) return
+    if (startOffset === endOffset) return
+
+    // Ensure start < end (selection can be backwards)
+    const realStart = Math.min(startOffset, endOffset)
+    const realEnd = Math.max(startOffset, endOffset)
 
     const newSelection = {
-      start: selStart,
-      end: selStart + selectedText.length,
-      text: selectedText
+      start: realStart,
+      end: realEnd,
+      text: sourceText.slice(realStart, realEnd)
+    }
+
+    // Validate: the selected text must match what the browser selected
+    if (newSelection.text !== selectedText) {
+      // Fallback: find the selected text in sourceText near the calculated position
+      const searchFrom = Math.max(0, realStart - 5)
+      const searchTo = Math.min(sourceText.length, realEnd + 5)
+      const region = sourceText.slice(searchFrom, searchTo)
+      const idx = region.indexOf(selectedText)
+      if (idx !== -1) {
+        newSelection.start = searchFrom + idx
+        newSelection.end = searchFrom + idx + selectedText.length
+        newSelection.text = selectedText
+      }
     }
 
     // Check overlap with existing selections
@@ -508,7 +524,7 @@ function ErrorCorrectionTask({ question, exerciseId, answer, onAnswer, showResul
     setSelections(newSelections)
     saveToParent(newSelections, corrections)
     sel.removeAllRanges()
-  }, [selections, corrections, maxErrors, showResult, sortedSelections])
+  }, [selections, corrections, maxErrors, showResult, sortedSelections, sourceText])
 
   // Remove a selection by index (in sorted order)
   const removeSelection = useCallback((sortedIndex) => {
