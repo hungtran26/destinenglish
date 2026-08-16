@@ -191,6 +191,7 @@ function AppContent() {
   const [page, setPage] = useState(PAGES.LANDING)
   const [activeTest, setActiveTest] = useState(null)
   const [lastAnswers, setLastAnswers] = useState(null)
+  const [reimportTitle, setReimportTitle] = useState(null)
 
   if (loading) {
     return (
@@ -254,7 +255,17 @@ function AppContent() {
   }
 
   const handleImportComplete = () => {
+    setReimportTitle(null)
     setPage(PAGES.TEST_LIST)
+  }
+
+  const handleReimport = (title) => {
+    if (!isAdmin) {
+      alert("Admin access required.")
+      return
+    }
+    setReimportTitle(title)
+    setPage(PAGES.ADMIN)
   }
 
   return (
@@ -275,7 +286,7 @@ function AppContent() {
           <Flowers />
           <UserHeader />
           <div className="page-container">
-            <TestList onSelectTest={handleSelectTest} onGoAdmin={handleGoAdmin} />
+            <TestList onSelectTest={handleSelectTest} onGoAdmin={handleGoAdmin} onReimport={handleReimport} />
             <div className="page-footer">
               <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
                 Home
@@ -298,7 +309,7 @@ function AppContent() {
           <Flowers />
           <UserHeader />
           <div className="page-container">
-            <AdminImport onImportComplete={handleImportComplete} onBack={handleHome} />
+            <AdminImport onImportComplete={handleImportComplete} onBack={handleHome} reimportTitle={reimportTitle} />
           </div>
         </>
       )}

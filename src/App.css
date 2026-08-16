@@ -604,6 +604,32 @@ body {
 }
 .image-preview-actions { display: flex; gap: 6px; justify-content: center; margin-top: 8px; }
 
+/* Test title edit */
+.test-title-edit { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 14px 18px; background: rgba(255,255,255,0.6); border-radius: var(--radius-sm); border: 2px solid rgba(59,154,232,0.12); }
+.test-title-label { font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; }
+.test-title-input {
+  flex: 1; padding: 8px 14px; border: 2px solid rgba(59,154,232,0.15); border-radius: var(--radius-xs);
+  background: rgba(255,255,255,0.8); color: var(--text);
+  font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 600;
+  outline: none; transition: all 0.3s;
+}
+.test-title-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,154,232,0.1); }
+
+/* Overwrite confirmation */
+.admin-overwrite-confirm {
+  padding: 20px; margin: 16px 0;
+  background: rgba(255, 193, 7, 0.08); border: 2px solid rgba(255, 193, 7, 0.3);
+  border-radius: var(--radius-sm);
+}
+.admin-overwrite-confirm p { margin-bottom: 8px; color: var(--text); }
+
+/* Test card re-import button */
+.test-card-reimport {
+  background: rgba(59, 154, 232, 0.08); color: var(--primary);
+  border: 1px solid rgba(59, 154, 232, 0.15);
+}
+.test-card-reimport:hover { background: rgba(59, 154, 232, 0.15); }
+
 /* Kangaroo image components */
 .auth-kangaroo-img {
   width: 100px;

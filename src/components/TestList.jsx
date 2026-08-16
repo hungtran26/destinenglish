@@ -13,7 +13,7 @@ import heroImg from '../assets/hero.png'
  * - Time limit
  * - Start / Delete buttons
  */
-export default function TestList({ onSelectTest, onGoAdmin }) {
+export default function TestList({ onSelectTest, onGoAdmin, onReimport }) {
   const [tests, setTests] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -98,6 +98,12 @@ export default function TestList({ onSelectTest, onGoAdmin }) {
                     onClick={() => onSelectTest(blob)}
                   >
                     Start Test →
+                  </button>
+                  <button
+                    className="test-card-btn test-card-reimport"
+                    onClick={() => onReimport && onReimport(blob.test.title)}
+                  >
+                    Re-import
                   </button>
                   <button
                     className="test-card-btn test-card-delete"

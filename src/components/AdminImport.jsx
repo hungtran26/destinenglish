@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { validateImportBlob } from '../lib/validator'
-import { saveTest } from '../lib/testStorage'
+import { saveTest, testExists, replaceTest } from '../lib/testStorage'
 import { CONVERSION_PROMPT } from '../lib/conversionPrompt'
 import { detectImagePlaceholders, uploadImage, replacePlaceholders } from '../lib/imageStorage'
 import ExerciseRenderer from './ExerciseRenderer'
@@ -15,7 +15,7 @@ const STEPS = {
   IMPORT: "import"
 }
 
-export default function AdminImport({ onImportComplete, onBack }) {
+export default function AdminImport({ onImportComplete, onBack, reimportTitle }) {
   const [step, setStep] = useState(STEPS.PROMPT)
   const [blobText, setBlobText] = useState("")
   const [parsedBlob, setParsedBlob] = useState(null)
@@ -24,6 +24,13 @@ export default function AdminImport({ onImportComplete, onBack }) {
   const [importing, setImporting] = useState(false)
   const [parseError, setParseError] = useState("")
 
+  // Editable test title
+  const [testTitle, setTestTitle] = useState("")
+
+  // Overwrite confirmation
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false)
+  const [pendingOverwriteTitle, setPendingOverwriteTitle] = useState("")
+
   // Image state
   const [detectedImages, setDetectedImages] = useState([])
   const [imageFiles, setImageFiles] = useState({})
@@ -31,6 +38,14 @@ export default function AdminImport({ onImportComplete, onBack }) {
   const [uploadingImages, setUploadingImages] = useState(false)
   const [imageError, setImageError] = useState("")
   const fileInputRefs = useRef({})
+
+  // When reimportTitle is set, skip to paste step with title pre-filled
+  useEffect(() => {
+    if (reimportTitle) {
+      setTestTitle(reimportTitle)
+      setStep(STEPS.PASTE)
+    }
+  }, [reimportTitle])
 
   const handleCopyPrompt = async () => {
     try {
@@ -59,6 +74,7 @@ export default function AdminImport({ onImportComplete, onBack }) {
     try {
       const parsed = JSON.parse(blobText)
       setParsedBlob(parsed)
+      setTestTitle(parsed.test?.title || "")
       setStep(STEPS.VALIDATE)
     } catch (e) {
       setParseError(`Invalid JSON: ${e.message}`)
@@ -157,9 +173,27 @@ export default function AdminImport({ onImportComplete, onBack }) {
 
   const handleImport = async () => {
     if (!parsedBlob) return
+
+    // Apply the edited title
+    const updatedBlob = {
+      ...parsedBlob,
+      test: { ...parsedBlob.test, title: testTitle.trim() || parsedBlob.test.title }
+    }
+    setParsedBlob(updatedBlob)
+
+    const titleToSave = updatedBlob.test.title
+
+    // Check if test with this title already exists
+    const exists = await testExists(titleToSave)
+    if (exists) {
+      setPendingOverwriteTitle(titleToSave)
+      setShowOverwriteConfirm(true)
+      return
+    }
+
     setImporting(true)
     try {
-      await saveTest(parsedBlob)
+      await saveTest(updatedBlob)
       setImportSuccess(true)
       setStep(STEPS.IMPORT)
     } catch (e) {
@@ -169,12 +203,34 @@ export default function AdminImport({ onImportComplete, onBack }) {
     }
   }
 
+  const handleOverwriteConfirm = async () => {
+    setShowOverwriteConfirm(false)
+    setImporting(true)
+    try {
+      await replaceTest(pendingOverwriteTitle, parsedBlob)
+      setImportSuccess(true)
+      setStep(STEPS.IMPORT)
+    } catch (e) {
+      setErrors([e.message])
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleOverwriteCancel = () => {
+    setShowOverwriteConfirm(false)
+    setPendingOverwriteTitle("")
+  }
+
   const handleClear = () => {
     setBlobText("")
     setParsedBlob(null)
     setErrors([])
     setParseError("")
     setImportSuccess(false)
+    setTestTitle("")
+    setShowOverwriteConfirm(false)
+    setPendingOverwriteTitle("")
     setDetectedImages([])
     setImageFiles({})
     setImagePreviews({})
@@ -401,9 +457,21 @@ export default function AdminImport({ onImportComplete, onBack }) {
             <p className="admin-panel-desc">
               This is how students will see the test. Review carefully before importing.
             </p>
+
+            <div className="test-title-edit">
+              <label className="test-title-label">Test Name:</label>
+              <input
+                type="text"
+                className="test-title-input"
+                value={testTitle}
+                onChange={(e) => setTestTitle(e.target.value)}
+                placeholder="Enter test name..."
+              />
+            </div>
+
             <div className="admin-preview">
               <div className="admin-preview-header">
-                <h3>{parsedBlob.test.title}</h3>
+                <h3>{testTitle || parsedBlob.test.title}</h3>
                 {parsedBlob.test.description && <p>{parsedBlob.test.description}</p>}
                 {parsedBlob.test.time_limit_minutes && (
                   <span className="admin-preview-time">⏱ {parsedBlob.test.time_limit_minutes} minutes</span>
@@ -420,10 +488,29 @@ export default function AdminImport({ onImportComplete, onBack }) {
                 />
               ))}
             </div>
+
+            {/* Overwrite Confirmation */}
+            {showOverwriteConfirm && (
+              <div className="admin-overwrite-confirm">
+                <p>A test named <strong>"{pendingOverwriteTitle}"</strong> already exists.</p>
+                <p>Do you want to replace it with this new version?</p>
+                <div className="admin-actions">
+                  <button className="admin-btn admin-btn-primary" onClick={handleOverwriteConfirm} disabled={importing}>
+                    {importing ? "Replacing..." : "Yes, Replace It"}
+                  </button>
+                  <button className="admin-btn admin-btn-ghost" onClick={handleOverwriteCancel}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="admin-actions">
-              <button className="admin-btn admin-btn-primary" onClick={handleImport} disabled={importing}>
-                {importing ? "Importing..." : "🎉 Import Test"}
-              </button>
+              {!showOverwriteConfirm && (
+                <button className="admin-btn admin-btn-primary" onClick={handleImport} disabled={importing || !testTitle.trim()}>
+                  {importing ? "Importing..." : "🎉 Import Test"}
+                </button>
+              )}
               <button className="admin-btn admin-btn-ghost" onClick={() => setStep(STEPS.PASTE)}>
                 ← Edit Blob
               </button>
@@ -437,7 +524,7 @@ export default function AdminImport({ onImportComplete, onBack }) {
             <h2 className="admin-panel-title">🎉 Import Complete!</h2>
             <div className="admin-success">
               <div className="admin-success-icon"><img src={heroImg} alt="Kangaroo" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} /></div>
-              <p>Test <strong>{parsedBlob.test.title}</strong> has been imported successfully!</p>
+              <p>Test <strong>{testTitle || parsedBlob.test.title}</strong> has been imported successfully!</p>
               <p className="admin-success-sub">Students can now take this test.</p>
             </div>
             <div className="admin-actions">
@@ -449,6 +536,9 @@ export default function AdminImport({ onImportComplete, onBack }) {
                 setParsedBlob(null)
                 setErrors([])
                 setImportSuccess(false)
+                setTestTitle("")
+                setShowOverwriteConfirm(false)
+                setPendingOverwriteTitle("")
                 setDetectedImages([])
                 setImageFiles({})
                 setImagePreviews({})

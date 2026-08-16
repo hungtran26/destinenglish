@@ -151,7 +151,23 @@ export async function deleteTest(title) {
 }
 
 /**
- * Replace a test (for re-import).
+ * Check if a test with the given title exists.
+ */
+export async function testExists(title) {
+  if (isSupabaseConfigured) {
+    const { data } = await supabase
+      .from("tests")
+      .select("id")
+      .eq("title", title)
+      .maybeSingle()
+    return !!data
+  }
+
+  return localGetAll().some(t => t.test.title === title)
+}
+
+/**
+ * Replace an existing test (overwrite by title).
  */
 export async function replaceTest(oldTitle, newBlob) {
   const newTitle = newBlob.test.title
@@ -160,7 +176,7 @@ export async function replaceTest(oldTitle, newBlob) {
     // Delete old, insert new
     await supabase.from("tests").delete().eq("title", oldTitle)
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("tests")
       .insert({
         title: newTitle,
@@ -168,11 +184,14 @@ export async function replaceTest(oldTitle, newBlob) {
         time_limit_minutes: newBlob.test.time_limit_minutes || 45,
         test_data: newBlob
       })
+      .select()
+      .single()
 
     if (error) {
       console.error("Supabase replace test error:", error.message)
       throw new Error(`Failed to replace test: ${error.message}`)
     }
+
     return newBlob
   }
 
