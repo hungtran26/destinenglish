@@ -10,6 +10,9 @@ import TestTaker from './components/TestTaker'
 import TestResults from './components/TestResults'
 import TheoryList from './components/TheoryList'
 import AdminTheoryImport from './components/AdminTheoryImport'
+import MyResults from './components/MyResults'
+import { saveResult } from './lib/resultsStorage'
+import { scoreTest } from './lib/answerChecker'
 
 // ─────────────────────────────────────────
 // Decorative Components
@@ -187,7 +190,8 @@ const PAGES = {
   ADMIN: "admin",
   ADMIN_THEORY: "admin_theory",
   TAKING: "taking",
-  RESULTS: "results"
+  RESULTS: "results",
+  MY_RESULTS: "my_results"
 }
 
 function AppContent() {
@@ -236,6 +240,14 @@ function AppContent() {
     }
   }
 
+  const handleGoMyResults = () => {
+    if (!user) {
+      setPage(PAGES.AUTH)
+    } else {
+      setPage(PAGES.MY_RESULTS)
+    }
+  }
+
   const handleGoAdminTheory = () => {
     if (!user) {
       setPage(PAGES.AUTH)
@@ -255,8 +267,21 @@ function AppContent() {
     setPage(PAGES.TAKING)
   }
 
-  const handleCompleteTest = (answers) => {
+  const handleCompleteTest = async (answers) => {
     setLastAnswers(answers)
+    if (user && activeTest) {
+      try {
+        const scoreData = scoreTest(activeTest, answers)
+        await saveResult({
+          userId: user.id,
+          testTitle: activeTest.test.title,
+          answers,
+          results: scoreData
+        })
+      } catch (e) {
+        console.error('Failed to save result:', e)
+      }
+    }
     setPage(PAGES.RESULTS)
   }
 
@@ -316,6 +341,9 @@ function AppContent() {
             <div className="page-footer">
               <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
                 Home
+              </button>
+              <button className="admin-btn admin-btn-ghost" onClick={handleGoMyResults}>
+                My Results
               </button>
               <button className="admin-btn admin-btn-ghost" onClick={handleGoTheory}>
                 Theory
@@ -397,6 +425,30 @@ function AppContent() {
           onHome={handleHome}
           onRetake={handleRetake}
         />
+      )}
+
+      {page === PAGES.MY_RESULTS && (
+        <>
+          <Sunshine />
+          <Clouds />
+          <Grass />
+          <Flowers />
+          <UserHeader />
+          <div className="page-container">
+            <MyResults onBack={handleBackToTests} />
+            <div className="page-footer">
+              <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
+                Home
+              </button>
+              <button className="admin-btn admin-btn-ghost" onClick={handleBackToTests}>
+                Tests
+              </button>
+              <button className="admin-btn admin-btn-ghost" onClick={handleGoTheory}>
+                Theory
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

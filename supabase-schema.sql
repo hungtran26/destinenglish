@@ -113,3 +113,42 @@ CREATE POLICY "Authenticated users can delete theories"
   ON theories FOR DELETE
   TO authenticated
   USING (true);
+
+-- ─────────────────────────────────────────
+-- RESULTS TABLE
+-- ─────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  test_title TEXT NOT NULL,
+  answers JSONB NOT NULL DEFAULT '{}',
+  total_correct INTEGER NOT NULL DEFAULT 0,
+  total_questions INTEGER NOT NULL DEFAULT 0,
+  overall_pct INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE results ENABLE ROW LEVEL SECURITY;
+
+-- Users can read their own results
+CREATE POLICY "Users can read own results"
+  ON results FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Users can insert their own results
+CREATE POLICY "Users can insert own results"
+  ON results FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can delete their own results
+CREATE POLICY "Users can delete own results"
+  ON results FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Admins can read all results
+CREATE POLICY "Admins can read all results"
+  ON results FOR SELECT
+  USING (
+    EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')
+  );
