@@ -299,6 +299,18 @@ export default function AdminImport({ onImportComplete, onBack, reimportTitle })
             <p className="admin-panel-desc">
               Paste the JSON blob that the external AI generated. It should start with <code>{'{"schema_version": "1.1"'}</code>
             </p>
+
+            <div className="test-title-edit">
+              <label className="test-title-label">Test Name:</label>
+              <input
+                type="text"
+                className="test-title-input"
+                value={testTitle}
+                onChange={(e) => setTestTitle(e.target.value)}
+                placeholder="Enter the name for this test..."
+              />
+            </div>
+
             <textarea
               className="blob-textarea"
               value={blobText}

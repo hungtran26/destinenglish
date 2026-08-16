@@ -207,6 +207,66 @@ export async function replaceTest(oldTitle, newBlob) {
 }
 
 /**
+ * Rename a test (change title only, keep all other data).
+ */
+export async function renameTest(oldTitle, newTitle) {
+  if (!newTitle || !newTitle.trim()) {
+    throw new Error("New title cannot be empty.")
+  }
+  if (oldTitle === newTitle) return
+
+  // Check new title doesn't already exist
+  const exists = await testExists(newTitle)
+  if (exists) {
+    throw new Error(`A test named "${newTitle}" already exists.`)
+  }
+
+  if (isSupabaseConfigured) {
+    const { data, error } = await supabase
+      .from("tests")
+      .select("test_data")
+      .eq("title", oldTitle)
+      .single()
+
+    if (error || !data) {
+      throw new Error(`Test "${oldTitle}" not found.`)
+    }
+
+    // Update the blob's internal title
+    const blob = { ...data.test_data }
+    blob.test = { ...blob.test, title: newTitle }
+
+    // Delete old, insert new
+    await supabase.from("tests").delete().eq("title", oldTitle)
+
+    const { error: insertError } = await supabase
+      .from("tests")
+      .insert({
+        title: newTitle,
+        description: blob.test.description || "",
+        time_limit_minutes: blob.test.time_limit_minutes || 45,
+        test_data: blob
+      })
+
+    if (insertError) {
+      throw new Error(`Failed to rename test: ${insertError.message}`)
+    }
+    return
+  }
+
+  // localStorage fallback
+  const tests = localGetAll()
+  const index = tests.findIndex(t => t.test.title === oldTitle)
+  if (index === -1) {
+    throw new Error(`Test "${oldTitle}" not found.`)
+  }
+  const blob = { ...tests[index] }
+  blob.test = { ...blob.test, title: newTitle }
+  tests[index] = blob
+  localSaveAll(tests)
+}
+
+/**
  * Get summary info for all tests.
  * This is a lightweight version that doesn't need full test_data.
  */

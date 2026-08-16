@@ -629,6 +629,22 @@ body {
   border: 1px solid rgba(59, 154, 232, 0.15);
 }
 .test-card-reimport:hover { background: rgba(59, 154, 232, 0.15); }
+.test-card-rename {
+  background: rgba(255, 193, 7, 0.1); color: #E6A800;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+.test-card-rename:hover { background: rgba(255, 193, 7, 0.2); }
+
+/* Inline rename UI */
+.rename-inline { padding: 4px 0; }
+.rename-input {
+  width: 100%; padding: 8px 12px; border: 2px solid var(--primary); border-radius: var(--radius-xs);
+  background: rgba(255,255,255,0.9); color: var(--text);
+  font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 700;
+  outline: none; margin-bottom: 6px;
+}
+.rename-error { display: block; color: var(--red); font-size: 12px; margin-bottom: 6px; }
+.rename-actions { display: flex; gap: 6px; }
 
 /* Kangaroo image components */
 .auth-kangaroo-img {
@@ -1410,3 +1426,118 @@ body {
 .q-ec-input:focus { border-color: var(--primary); }
 .q-ec-input.ec-correct { border-color: var(--green); background: rgba(76, 175, 80, 0.06); }
 .q-ec-input.ec-wrong { border-color: var(--red); background: rgba(255, 71, 87, 0.06); }
+
+/* -----------------------------------------
+   Theory System
+   ----------------------------------------- */
+
+/* Theory List */
+.theory-list { max-width: 900px; margin: 0 auto; }
+.theory-list-header { text-align: center; margin-bottom: 32px; }
+.theory-list-title { font-family: 'Baloo 2', cursive; font-size: 32px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.theory-list-subtitle { color: var(--text-light); font-size: 15px; }
+.theory-list-loading { text-align: center; padding: 40px; color: var(--text-muted); }
+.theory-list-empty { text-align: center; padding: 40px 20px; }
+.theory-list-empty h3 { font-family: 'Baloo 2', cursive; margin: 12px 0 6px; color: var(--text); }
+.theory-list-empty p { color: var(--text-light); margin-bottom: 16px; }
+
+/* Theory Grid */
+.theory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+.theory-card {
+  position: relative; border-radius: var(--radius-md); overflow: hidden;
+  background: rgba(255,255,255,0.7); backdrop-filter: blur(12px);
+  border: 2px solid rgba(59,154,232,0.08);
+  transition: all 0.3s; animation: cardFadeIn 0.5s ease-out backwards;
+  animation-delay: var(--delay, 0s);
+}
+.theory-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(59,154,232,0.15); border-color: rgba(59,154,232,0.2); }
+.theory-card-glow { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent)); }
+.theory-card-content { padding: 20px; }
+.theory-card-title { font-family: 'Baloo 2', cursive; font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.theory-card-desc { font-size: 13px; color: var(--text-light); margin-bottom: 10px; line-height: 1.4; }
+.theory-card-meta { display: flex; gap: 12px; margin-bottom: 14px; }
+.theory-card-meta span { font-size: 12px; color: var(--text-muted); background: rgba(59,154,232,0.06); padding: 3px 10px; border-radius: 20px; }
+.theory-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.theory-card-btn {
+  flex: 1; padding: 8px 12px; border: none; border-radius: var(--radius-xs);
+  font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.theory-card-read { background: var(--primary); color: white; }
+.theory-card-read:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.theory-card-rename { background: rgba(255, 193, 7, 0.1); color: #E6A800; border: 1px solid rgba(255, 193, 7, 0.2); }
+.theory-card-rename:hover { background: rgba(255, 193, 7, 0.2); }
+.theory-card-delete { background: rgba(255, 71, 87, 0.08); color: var(--red); border: 1px solid rgba(255, 71, 87, 0.15); }
+.theory-card-delete:hover { background: rgba(255, 71, 87, 0.15); }
+
+/* Theory Viewer */
+.theory-page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.theory-nav { margin-bottom: 20px; }
+.theory-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid rgba(59,154,232,0.1); }
+.theory-title { font-family: 'Baloo 2', cursive; font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.theory-subtitle { color: var(--text-light); font-size: 16px; }
+.theory-section { margin-bottom: 28px; }
+.theory-section-title {
+  font-family: 'Baloo 2', cursive; font-size: 22px; font-weight: 700;
+  color: var(--primary); margin-bottom: 12px; padding-bottom: 6px;
+  border-bottom: 2px solid rgba(59,154,232,0.1);
+}
+.theory-section-content { display: flex; flex-direction: column; gap: 10px; }
+.theory-heading { font-family: 'Baloo 2', cursive; color: var(--text); margin: 12px 0 6px; }
+.theory-h2 { font-size: 24px; }
+.theory-h3 { font-size: 18px; font-weight: 700; }
+.theory-h4 { font-size: 15px; font-weight: 700; }
+.theory-paragraph { font-size: 15px; line-height: 1.7; color: var(--text); }
+
+/* Theory Tables */
+.theory-table-wrapper { overflow-x: auto; margin: 8px 0; }
+.theory-table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  background: rgba(255,255,255,0.6); border-radius: var(--radius-xs);
+  overflow: hidden; border: 1px solid rgba(59,154,232,0.1);
+}
+.theory-table th {
+  background: rgba(59,154,232,0.08); padding: 10px 14px;
+  text-align: left; font-weight: 700; color: var(--text);
+  border-bottom: 2px solid rgba(59,154,232,0.12);
+}
+.theory-table td {
+  padding: 8px 14px; border-bottom: 1px solid rgba(0,0,0,0.05);
+  color: var(--text); line-height: 1.5;
+}
+.theory-table tr:last-child td { border-bottom: none; }
+.theory-table tr:hover td { background: rgba(59,154,232,0.03); }
+
+/* Theory Lists */
+.theory-list-ordered, .theory-list-unordered {
+  margin: 8px 0; padding-left: 24px; font-size: 15px; line-height: 1.7; color: var(--text);
+}
+.theory-list li { margin-bottom: 4px; }
+
+/* Theory Tips */
+.theory-tip {
+  display: flex; gap: 10px; padding: 12px 16px; border-radius: var(--radius-xs);
+  font-size: 14px; line-height: 1.6; margin: 8px 0;
+}
+.theory-tip-info { background: rgba(59,154,232,0.06); border: 1px solid rgba(59,154,232,0.15); }
+.theory-tip-warning { background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.25); }
+.theory-tip-note { background: rgba(76,175,80,0.06); border: 1px solid rgba(76,175,80,0.15); }
+.theory-tip-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.theory-tip-text { color: var(--text); }
+
+/* Theory Examples */
+.theory-example {
+  display: flex; gap: 8px; padding: 8px 14px; border-radius: var(--radius-xs);
+  font-size: 14px; line-height: 1.6; margin: 4px 0; font-style: italic;
+}
+.theory-example-correct { background: rgba(76,175,80,0.06); color: var(--text); }
+.theory-example-wrong { background: rgba(255,71,87,0.05); color: var(--text-muted); text-decoration: line-through; }
+.theory-example-icon { font-weight: 700; flex-shrink: 0; }
+.theory-example-correct .theory-example-icon { color: var(--green); }
+.theory-example-wrong .theory-example-icon { color: var(--red); }
+
+/* Theory Divider */
+.theory-divider { border: none; border-top: 2px solid rgba(59,154,232,0.1); margin: 16px 0; }
+
+/* Theory Preview Container */
+.theory-preview-container { max-height: 600px; overflow-y: auto; padding: 20px; }

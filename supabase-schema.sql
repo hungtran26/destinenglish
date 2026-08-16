@@ -74,3 +74,42 @@ CREATE POLICY "Authenticated users can delete tests"
   ON tests FOR DELETE
   TO authenticated
   USING (true);
+
+-- ─────────────────────────────────────────
+-- THEORIES TABLE
+-- ─────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS theories (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title TEXT NOT NULL UNIQUE,
+  subtitle TEXT DEFAULT '',
+  theory_data JSONB NOT NULL,
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE theories ENABLE ROW LEVEL SECURITY;
+
+-- Anyone authenticated can read theories
+CREATE POLICY "Authenticated users can read theories"
+  ON theories FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Anonymous users can read theories
+CREATE POLICY "Anonymous users can read theories"
+  ON theories FOR SELECT
+  TO anon
+  USING (true);
+
+-- Only authenticated users can insert theories
+CREATE POLICY "Authenticated users can insert theories"
+  ON theories FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+-- Only authenticated users can delete theories
+CREATE POLICY "Authenticated users can delete theories"
+  ON theories FOR DELETE
+  TO authenticated
+  USING (true);

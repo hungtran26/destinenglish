@@ -8,6 +8,8 @@ import TestList from './components/TestList'
 import AdminImport from './components/AdminImport'
 import TestTaker from './components/TestTaker'
 import TestResults from './components/TestResults'
+import TheoryList from './components/TheoryList'
+import AdminTheoryImport from './components/AdminTheoryImport'
 
 // ─────────────────────────────────────────
 // Decorative Components
@@ -181,7 +183,9 @@ const PAGES = {
   LANDING: "landing",
   AUTH: "auth",
   TEST_LIST: "test_list",
+  THEORY_LIST: "theory_list",
   ADMIN: "admin",
+  ADMIN_THEORY: "admin_theory",
   TAKING: "taking",
   RESULTS: "results"
 }
@@ -224,6 +228,24 @@ function AppContent() {
     }
   }
 
+  const handleGoTheory = () => {
+    if (!user) {
+      setPage(PAGES.AUTH)
+    } else {
+      setPage(PAGES.THEORY_LIST)
+    }
+  }
+
+  const handleGoAdminTheory = () => {
+    if (!user) {
+      setPage(PAGES.AUTH)
+    } else if (!isAdmin) {
+      alert("Admin access required.")
+    } else {
+      setPage(PAGES.ADMIN_THEORY)
+    }
+  }
+
   const handleAuthSuccess = () => {
     setPage(PAGES.TEST_LIST)
   }
@@ -259,6 +281,10 @@ function AppContent() {
     setPage(PAGES.TEST_LIST)
   }
 
+  const handleTheoryImportComplete = () => {
+    setPage(PAGES.THEORY_LIST)
+  }
+
   const handleReimport = (title) => {
     if (!isAdmin) {
       alert("Admin access required.")
@@ -291,6 +317,9 @@ function AppContent() {
               <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
                 Home
               </button>
+              <button className="admin-btn admin-btn-ghost" onClick={handleGoTheory}>
+                Theory
+              </button>
               {isAdmin && (
                 <button className="admin-btn admin-btn-ghost" onClick={handleGoAdmin}>
                   Admin
@@ -310,6 +339,45 @@ function AppContent() {
           <UserHeader />
           <div className="page-container">
             <AdminImport onImportComplete={handleImportComplete} onBack={handleHome} reimportTitle={reimportTitle} />
+          </div>
+        </>
+      )}
+
+      {page === PAGES.THEORY_LIST && (
+        <>
+          <Sunshine />
+          <Clouds />
+          <Grass />
+          <Flowers />
+          <UserHeader />
+          <div className="page-container">
+            <TheoryList onGoAdmin={handleGoAdminTheory} onBack={handleHome} />
+            <div className="page-footer">
+              <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
+                Home
+              </button>
+              <button className="admin-btn admin-btn-ghost" onClick={handleStart}>
+                Tests
+              </button>
+              {isAdmin && (
+                <button className="admin-btn admin-btn-ghost" onClick={handleGoAdminTheory}>
+                  Admin
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {page === PAGES.ADMIN_THEORY && isAdmin && (
+        <>
+          <Sunshine />
+          <Clouds />
+          <Grass />
+          <Flowers />
+          <UserHeader />
+          <div className="page-container">
+            <AdminTheoryImport onImportComplete={handleTheoryImportComplete} onBack={handleHome} />
           </div>
         </>
       )}
