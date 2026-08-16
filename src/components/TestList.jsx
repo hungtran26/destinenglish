@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getAllTests, deleteTest } from '../lib/testStorage'
+import heroImg from '../assets/hero.png'
 
 /**
  * TestList — displays all available tests and allows selecting one
@@ -63,7 +64,7 @@ export default function TestList({ onSelectTest, onGoAdmin }) {
 
       {tests.length === 0 ? (
         <div className="test-list-empty">
-          <div className="empty-kangaroo">🦘</div>
+          <img src={heroImg} alt="Kangaroo" className="empty-kangaroo-img" />
           <h3>No tests yet</h3>
           <p>Import a test from the admin panel to get started.</p>
           <button className="admin-btn admin-btn-primary" onClick={onGoAdmin}>

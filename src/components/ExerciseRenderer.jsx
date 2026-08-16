@@ -137,15 +137,105 @@ function getQuestionNumber(question) {
 // ─────────────────────────────────────────
 
 function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult }) {
-  const answerKey = typeof question.answer === "object" && question.answer !== null
-    ? question.answer
-    : { accepted: [question.answer] }
-  const accepted = answerKey.accepted || []
-
   const promptText = toPlainText(question.prompt)
 
-  // Split by ___ patterns and render inputs between them
+  // Detect multi-blank question: has a "blanks" array
+  const blanks = Array.isArray(question.blanks) ? question.blanks : null
+  const numBlanks = blanks
+    ? blanks.length
+    : (promptText.split(/___+/).length - 1)
+
+  // Single-blank question (no blanks array, exactly 1 ___ or no ___ for sentence-writing)
+  if (!blanks && numBlanks <= 1) {
+    const answerKey = typeof question.answer === "object" && question.answer !== null
+      ? question.answer
+      : { accepted: [question.answer] }
+    const accepted = answerKey.accepted || []
+    const parts = promptText.split(/___+/)
+    const hasBlanks = parts.length > 1
+
+    if (hasBlanks) {
+      return (
+        <div className="q-fill-blank">
+          <div className="q-prompt">
+            {parts.map((part, i) => (
+              <span key={i}>
+                {part}
+                {i < parts.length - 1 && (
+                  <input
+                    type="text"
+                    className={`q-blank-input ${showResult
+                      ? (answer && accepted.some(a => a.toLowerCase().trim() === String(answer).toLowerCase().trim())
+                        ? "blank-correct" : "blank-wrong")
+                      : ""}`}
+                    value={answer || ""}
+                    onChange={(e) => onAnswer(e.target.value)}
+                    placeholder="..."
+                    disabled={showResult}
+                  />
+                )}
+              </span>
+            ))}
+          </div>
+          {showResult && !answer && (
+            <div className="q-answer-reveal">
+              Correct answer: <strong>{accepted[0]}</strong>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    // No blanks: show prompt text + a single input below
+    return (
+      <div className="q-fill-blank">
+        <div className="q-prompt">{promptText}</div>
+        <input
+          type="text"
+          className={`q-blank-input q-blank-full ${showResult
+            ? (answer && accepted.some(a => a.toLowerCase().trim() === String(answer).toLowerCase().trim())
+              ? "blank-correct" : "blank-wrong")
+            : ""}`}
+          value={answer || ""}
+          onChange={(e) => onAnswer(e.target.value)}
+          placeholder="Type your answer here..."
+          disabled={showResult}
+        />
+        {showResult && (
+          <div className="q-answer-reveal">
+            {answer && accepted.some(a => a.toLowerCase().trim() === String(answer).toLowerCase().trim()) ? (
+              <span className="q-correct-label">✓ Correct!</span>
+            ) : (
+              <span>Correct answer: <strong>{accepted[0]}</strong></span>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── MULTI-BLANK QUESTION ──
+  // answer is an array: ["Are", "watching"]
+  // blanks is: [{ accepted: ["Are"] }, { accepted: ["watching"] }]
   const parts = promptText.split(/___+/)
+  const studentAnswers = Array.isArray(answer) ? answer : Array(numBlanks).fill("")
+
+  // Check if each blank is correct
+  const blankResults = blanks
+    ? blanks.map((blank, i) => {
+        const val = studentAnswers[i] || ""
+        const acc = blank.accepted || []
+        return acc.some(a => a.toLowerCase().trim() === val.toLowerCase().trim())
+      })
+    : []
+  const allCorrect = blanks && blanks.length > 0 && blankResults.every(Boolean)
+
+  const updateBlank = (index, newValue) => {
+    const newAnswers = [...studentAnswers]
+    while (newAnswers.length <= index) newAnswers.push("")
+    newAnswers[index] = newValue
+    onAnswer(newAnswers)
+  }
 
   return (
     <div className="q-fill-blank">
@@ -153,15 +243,14 @@ function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult 
         {parts.map((part, i) => (
           <span key={i}>
             {part}
-            {i < parts.length - 1 && (
+            {i < parts.length - 1 && i < numBlanks && (
               <input
                 type="text"
                 className={`q-blank-input ${showResult
-                  ? (answer && accepted.some(a => a.toLowerCase().trim() === String(answer).toLowerCase().trim())
-                    ? "blank-correct" : "blank-wrong")
+                  ? (blankResults[i] ? "blank-correct" : "blank-wrong")
                   : ""}`}
-                value={answer || ""}
-                onChange={(e) => onAnswer(e.target.value)}
+                value={studentAnswers[i] || ""}
+                onChange={(e) => updateBlank(i, e.target.value)}
                 placeholder="..."
                 disabled={showResult}
               />
@@ -169,9 +258,15 @@ function FillBlankQuestion({ question, exerciseId, answer, onAnswer, showResult 
           </span>
         ))}
       </div>
-      {showResult && !answer && (
+      {showResult && blanks && (
         <div className="q-answer-reveal">
-          Correct answer: <strong>{accepted[0]}</strong>
+          {allCorrect ? (
+            <span className="q-correct-label">✓ Correct!</span>
+          ) : (
+            <span>
+              Correct answer: <strong>{blanks.map(b => (b.accepted || [])[0] || "").join(" / ")}</strong>
+            </span>
+          )}
         </div>
       )}
     </div>

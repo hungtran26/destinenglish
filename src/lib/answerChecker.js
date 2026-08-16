@@ -45,9 +45,45 @@ function getOptions(answerKey) {
 
 /**
  * Check a fill-blank answer.
+ * Handles both single-answer (string) and multi-blank (array) answers.
  */
-export function checkFillBlank(studentAnswer, answerKey) {
-  const accepted = resolveAccepted(answerKey)
+export function checkFillBlank(studentAnswer, question) {
+  // Multi-blank: studentAnswer is an array, question has blanks array
+  if (Array.isArray(studentAnswer) && Array.isArray(question.blanks)) {
+    let allCorrect = true
+    const details = []
+
+    for (let i = 0; i < question.blanks.length; i++) {
+      const blank = question.blanks[i]
+      const val = studentAnswer[i] || ""
+      const accepted = blank.accepted || []
+      const opts = getOptions(blank)
+      const normalized = normalize(val, opts)
+
+      const correct = accepted.some(a => normalize(a, opts) === normalized)
+      if (!correct) allCorrect = false
+
+      details.push({
+        blank_index: i,
+        student_answer: val,
+        correct,
+        accepted_answer: accepted[0] || ""
+      })
+    }
+
+    return {
+      correct: allCorrect,
+      accepted_answer: question.blanks.map(b => (b.accepted || [])[0] || "").join(" / "),
+      score: allCorrect ? 1 : 0,
+      details
+    }
+  }
+
+  // Single-blank (original logic)
+  const answerKey = typeof question.answer === "object" && question.answer !== null
+    ? question.answer
+    : { accepted: [question.answer] }
+  const accepted = answerKey.accepted || []
   const opts = getOptions(answerKey)
   const normalized = normalize(studentAnswer, opts)
 
@@ -173,7 +209,7 @@ export function checkErrorCorrection(question, studentAnswer) {
 export function checkAnswer(question, studentAnswer) {
   switch (question.type) {
     case "fill-blank":
-      return checkFillBlank(studentAnswer, question.answer)
+      return checkFillBlank(studentAnswer, question)
 
     case "multiple-choice":
       return checkMultipleChoice(studentAnswer, question.answer)

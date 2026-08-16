@@ -3,6 +3,7 @@ import { validateImportBlob } from '../lib/validator'
 import { saveTest } from '../lib/testStorage'
 import { CONVERSION_PROMPT } from '../lib/conversionPrompt'
 import ExerciseRenderer from './ExerciseRenderer'
+import heroImg from '../assets/hero.png'
 
 const STEPS = {
   PROMPT: "prompt",
@@ -251,7 +252,7 @@ export default function AdminImport({ onImportComplete, onBack }) {
           <div className="admin-panel">
             <h2 className="admin-panel-title">🎉 Import Complete!</h2>
             <div className="admin-success">
-              <div className="admin-success-icon">🦘</div>
+              <div className="admin-success-icon"><img src={heroImg} alt="Kangaroo" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} /></div>
               <p>Test <strong>{parsedBlob.test.title}</strong> has been imported successfully!</p>
               <p className="admin-success-sub">Students can now take this test.</p>
             </div>

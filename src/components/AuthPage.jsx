@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from './AuthProvider'
+import heroImg from '../assets/hero.png'
 
 /**
  * AuthPage — Login/Signup form
@@ -32,11 +33,12 @@ export default function AuthPage({ onBack }) {
 
   return (
     <div className="auth-page">
-      <GlowOrbs />
-      <FloatingKangaroos />
+      <Sunshine />
+      <Clouds />
+      <Flowers />
 
       <div className="auth-card">
-        <div className="auth-kangaroo">🦘</div>
+        <img src={heroImg} alt="Kangaroo" className="auth-kangaroo-img" />
         <h2 className="auth-title">
           {mode === "signin" ? "Welcome Back" : "Create Account"}
         </h2>
@@ -98,43 +100,33 @@ export default function AuthPage({ onBack }) {
   )
 }
 
-// Minimal imports for decorative components used in auth page
-function GlowOrbs() {
+function Sunshine() {
+  return <div className="sunshine" />
+}
+
+function Clouds() {
   return (
-    <div className="glow-orbs">
-      <div className="glow-orb orb-1" />
-      <div className="glow-orb orb-2" />
-      <div className="glow-orb orb-3" />
-      <div className="glow-orb orb-4" />
+    <div className="clouds">
+      <div className="cloud cloud-1" />
+      <div className="cloud cloud-2" />
+      <div className="cloud cloud-3" />
     </div>
   )
 }
 
-function FloatingKangaroos() {
-  const kangaroos = Array.from({ length: 8 }, (_, i) => ({
-    id: i,
-    left: Math.random() * 100,
-    delay: Math.random() * 20,
-    duration: 15 + Math.random() * 20,
-    size: 20 + Math.random() * 30,
-    opacity: 0.03 + Math.random() * 0.06
-  }))
-
+function Flowers() {
+  const flowers = [
+    { left: '10%', emoji: '🌸', delay: 0 },
+    { left: '30%', emoji: '🌼', delay: 0.5 },
+    { left: '50%', emoji: '🌷', delay: 1.2 },
+    { left: '70%', emoji: '🌻', delay: 0.8 },
+    { left: '90%', emoji: '🌸', delay: 1.5 }
+  ]
   return (
-    <div className="floating-kangaroos">
-      {kangaroos.map(k => (
-        <div
-          key={k.id}
-          className="floating-kangaroo"
-          style={{
-            left: `${k.left}%`,
-            animationDelay: `${k.delay}s`,
-            animationDuration: `${k.duration}s`,
-            fontSize: `${k.size}px`,
-            opacity: k.opacity
-          }}
-        >
-          🦘
+    <div className="flowers">
+      {flowers.map((f, i) => (
+        <div key={i} className="flower" style={{ left: f.left, animationDelay: `${f.delay}s` }}>
+          {f.emoji}
         </div>
       ))}
     </div>

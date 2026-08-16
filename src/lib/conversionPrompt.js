@@ -56,11 +56,18 @@ RULES:
 EXERCISE TYPES — detect these from the source and use the matching type:
 
 TYPE: "fill-blank"
-- Instructions say "Complete using..." or there are blanks (___, dots, underlines) in sentences
-- Student types a word/phrase into the blank
-- prompt contains ___ where the blank is
-- answer is the correct word(s)
-- Example: prompt = "Gordon ___ (write) a letter at the moment.", answer = "is writing"
+- Instructions say "Complete using..." or "use the prompts to write sentences" or there are blanks (___, dots, underlines) in sentences
+- Student types a word/phrase/sentence into the input
+- SINGLE BLANK: prompt contains one ___, answer is the correct word(s)
+  - prompt = "Gordon ___ (write) a letter at the moment.", answer = { "accepted": ["is writing"] }
+- MULTI BLANK: prompt contains multiple ___ (e.g., two or three blanks), each blank gets its own answer
+  - prompt = "___ you ___ this programme or can I turn the TV off?", blanks = [{ "accepted": ["Are"] }, { "accepted": ["watching"] }]
+  - prompt = "___ Simon always ___ the washing-up after lunch?", blanks = [{ "accepted": ["Does"] }, { "accepted": ["does"] }]
+  - When the answer key uses "/" to separate answers for different blanks (like "Are/watching"), each segment maps to a blank IN ORDER
+- SENTENCE WRITING from prompts: prompt contains slash-separated key words/phrases, answer is the full sentence
+  - prompt = "every day / get up / at half past seven", answer = { "accepted": ["Every day, Helen gets up at half past seven."] }
+- When the prompt uses / to separate word prompts (not choices), the student writes a full sentence using those words
+- CRITICAL: For multi-blank questions, use "blanks" array NOT "answer". Each blank is a separate object with its own "accepted" array
 
 TYPE: "multiple-choice"
 - Instructions say "Choose the correct..." or "Which..." with listed options
@@ -110,11 +117,16 @@ SLASH MEANING:
 - The structured JSON eliminates all ambiguity
 
 ANSWER KEY FORMATS:
-- For fill-blank: answer = { "accepted": ["correct answer"] }
+- For fill-blank (single blank): answer = { "accepted": ["correct answer"] }
+- For fill-blank (multi blank): blanks = [{ "accepted": ["answer1"] }, { "accepted": ["answer2"] }]
+  - The "blanks" array replaces "answer" when there are multiple blanks in one question
+  - Each element in the blanks array corresponds to one blank IN ORDER from left to right
 - For multiple-choice/circle: answer = index number (0-based)
 - For rewrite: answer = { "accepted": ["correct version"] }
 - For error-correction: errors = [{ "wrong": "...", "correct": "..." }]
-- If multiple answers are acceptable, put them all in the accepted array
+- If multiple answers are acceptable for a single blank, put them all in that blank's accepted array
+- Example multi-blank answer key: "Are/watching" → blanks = [{ "accepted": ["Are"] }, { "accepted": ["watching"] }]
+- Example single-blank with alternatives: "has/has got" → answer = { "accepted": ["has", "has got"] }
 
 IMPORTANT: If an answer key is provided with the test, use it to populate the answer fields. Do NOT guess answers. If no answer key is provided, make your best reasonable guess based on standard English grammar rules.`
 

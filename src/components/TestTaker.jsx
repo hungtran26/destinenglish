@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import ExerciseRenderer from './ExerciseRenderer'
 import { scoreTest } from '../lib/answerChecker'
+import heroImg from '../assets/hero.png'
 
 /**
  * TestTaker — the main student-facing test component
@@ -157,7 +158,7 @@ export default function TestTaker({ testData, onComplete, onBack }) {
       {showSubmitConfirm && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-kangaroo">🦘</div>
+            <img src={heroImg} alt="Kangaroo" className="modal-kangaroo-img" />
             <h3>Ready to submit?</h3>
             <p>
               You've answered <strong>{answeredCount}</strong> out of{" "}
@@ -184,7 +185,7 @@ export default function TestTaker({ testData, onComplete, onBack }) {
       {showBackConfirm && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-kangaroo">⚠️</div>
+            <div className="modal-warning-icon">⚠️</div>
             <h3>Leave test?</h3>
             <p>Your answers for this test will be lost if you go back.</p>
             <div className="modal-actions">

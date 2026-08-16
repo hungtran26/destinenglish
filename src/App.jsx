@@ -143,7 +143,7 @@ function LandingPage({ onStart, onGoAdmin }) {
 
         <button className="start-button" onClick={onStart}>
           <span className="start-button-text">Browse Tests</span>
-          <span className="start-button-icon">🦘</span>
+          <img src={heroImg} alt="" className="start-button-icon-img" />
           <div className="start-button-ripple" />
         </button>
 

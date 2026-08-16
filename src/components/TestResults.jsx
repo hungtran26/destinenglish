@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import ExerciseRenderer from './ExerciseRenderer'
 import { scoreTest } from '../lib/answerChecker'
+import heroImg from '../assets/hero.png'
 
 /**
  * TestResults — displays results after a test is submitted
@@ -93,7 +94,7 @@ export default function TestResults({ testData, answers, onHome, onRetake }) {
 
       <div className="results-content">
         <div className="results-hero">
-          <div className="results-kangaroo">🦘</div>
+          <img src={heroImg} alt="Kangaroo" className="results-kangaroo-img" />
           <h2 className="results-title">Test Complete!</h2>
           <p className="results-message">{gradeInfo.message}</p>
         </div>

@@ -210,7 +210,17 @@ function validateQuestion(q, prefix, errors) {
       if (!isFormattedText(q.prompt)) {
         errors.push(`${prefix}: 'prompt' is required (string or formatted text).`)
       }
-      validateAnswerKey(q.answer, "answer", prefix, errors)
+      // Accept either "answer" (single blank) or "blanks" (multi-blank)
+      if (q.blanks && Array.isArray(q.blanks)) {
+        // Multi-blank: validate each blank
+        q.blanks.forEach((blank, i) => {
+          if (!blank.accepted || !Array.isArray(blank.accepted) || blank.accepted.length === 0) {
+            errors.push(`${prefix}: blanks[${i}].accepted must be a non-empty array of strings.`)
+          }
+        })
+      } else {
+        validateAnswerKey(q.answer, "answer", prefix, errors)
+      }
       break
 
     case "multiple-choice":
