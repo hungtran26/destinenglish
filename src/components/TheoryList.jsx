@@ -3,7 +3,7 @@ import { getAllTheories, deleteTheory, renameTheory } from '../lib/theoryStorage
 import TheoryViewer from './TheoryViewer'
 import heroImg from '../assets/hero.png'
 
-export default function TheoryList({ onGoAdmin, onBack }) {
+export default function TheoryList({ onGoAdmin, onBack, isAdmin }) {
   const [theories, setTheories] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedTheory, setSelectedTheory] = useState(null)
@@ -143,18 +143,22 @@ export default function TheoryList({ onGoAdmin, onBack }) {
                       >
                         Read →
                       </button>
-                      <button
-                        className="theory-card-btn theory-card-rename"
-                        onClick={() => startRename(blob.theory.title)}
-                      >
-                        Rename
-                      </button>
-                      <button
-                        className="theory-card-btn theory-card-delete"
-                        onClick={() => handleDelete(blob.theory.title)}
-                      >
-                        Delete
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            className="theory-card-btn theory-card-rename"
+                            onClick={() => startRename(blob.theory.title)}
+                          >
+                            Rename
+                          </button>
+                          <button
+                            className="theory-card-btn theory-card-delete"
+                            onClick={() => handleDelete(blob.theory.title)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </>
                 )}

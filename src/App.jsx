@@ -387,7 +387,7 @@ function AppContent() {
           <Flowers />
           <UserHeader />
           <div className="page-container">
-            <TheoryList onGoAdmin={handleGoAdminTheory} onBack={handleHome} />
+            <TheoryList onGoAdmin={handleGoAdminTheory} onBack={handleHome} isAdmin={isAdmin} />
             <div className="page-footer">
               <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
                 Home
