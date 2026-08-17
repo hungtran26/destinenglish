@@ -13,6 +13,7 @@ import AdminTheoryImport from './components/AdminTheoryImport'
 import MyResults from './components/MyResults'
 import { saveResult } from './lib/resultsStorage'
 import { scoreTest } from './lib/answerChecker'
+import { isSupabaseConfigured } from './lib/supabase'
 
 // ─────────────────────────────────────────
 // Decorative Components
@@ -321,6 +322,13 @@ function AppContent() {
 
   return (
     <div className="app">
+      {!isSupabaseConfigured && (
+        <div className="supabase-warning">
+          Supabase not configured — data is stored locally on this device only.
+          Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env or Vercel environment variables.
+        </div>
+      )}
+
       {page === PAGES.LANDING && (
         <LandingPage onStart={handleStart} onGoAdmin={handleGoAdmin} />
       )}

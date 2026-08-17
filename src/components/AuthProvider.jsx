@@ -78,16 +78,23 @@ export function AuthProvider({ children }) {
       }
 
       // Step 2: No profile exists — determine role
-      // Count existing profiles to decide if this is the first user
-      const { count, error: countError } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
+      // Use RPC to count ALL profiles (bypasses RLS)
+      let role = "student"
+      try {
+        const { data: count, error: countError } = await supabase
+          .rpc("get_profile_count")
 
-      if (countError) {
-        console.error("Profile count error:", countError.message)
+        if (countError) {
+          console.error("Profile count RPC error:", countError.message)
+        }
+
+        // If count is 0 or null, this is the first user → admin
+        if (!count || count === 0) {
+          role = "admin"
+        }
+      } catch (rpcErr) {
+        console.warn("RPC unavailable, defaulting to student role:", rpcErr.message)
       }
-
-      const role = (count === 0) ? "admin" : "student"
 
       // Step 3: Create the profile
       const { data: newProfile, error: insertError } = await supabase
