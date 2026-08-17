@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { getAllTests, deleteTest, renameTest } from '../lib/testStorage'
 import heroImg from '../assets/hero.png'
 
-export default function TestList({ onSelectTest, onGoAdmin, onReimport }) {
+export default function TestList({ onSelectTest, onGoAdmin, onReimport, isAdmin }) {
   const [tests, setTests] = useState([])
   const [loading, setLoading] = useState(true)
   const [renamingTitle, setRenamingTitle] = useState(null)
@@ -137,24 +137,28 @@ export default function TestList({ onSelectTest, onGoAdmin, onReimport }) {
                       >
                         Start Test →
                       </button>
-                      <button
-                        className="test-card-btn test-card-rename"
-                        onClick={() => startRename(blob.test.title)}
-                      >
-                        Rename
-                      </button>
-                      <button
-                        className="test-card-btn test-card-reimport"
-                        onClick={() => onReimport && onReimport(blob.test.title)}
-                      >
-                        Re-import
-                      </button>
-                      <button
-                        className="test-card-btn test-card-delete"
-                        onClick={() => handleDelete(blob.test.title)}
-                      >
-                        Delete
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button
+                            className="test-card-btn test-card-rename"
+                            onClick={() => startRename(blob.test.title)}
+                          >
+                            Rename
+                          </button>
+                          <button
+                            className="test-card-btn test-card-reimport"
+                            onClick={() => onReimport && onReimport(blob.test.title)}
+                          >
+                            Re-import
+                          </button>
+                          <button
+                            className="test-card-btn test-card-delete"
+                            onClick={() => handleDelete(blob.test.title)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </>
                 )}

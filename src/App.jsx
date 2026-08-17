@@ -345,7 +345,7 @@ function AppContent() {
           <Flowers />
           <UserHeader />
           <div className="page-container">
-            <TestList onSelectTest={handleSelectTest} onGoAdmin={handleGoAdmin} onReimport={handleReimport} />
+            <TestList onSelectTest={handleSelectTest} onGoAdmin={handleGoAdmin} onReimport={handleReimport} isAdmin={isAdmin} />
             <div className="page-footer">
               <button className="admin-btn admin-btn-ghost" onClick={handleHome}>
                 Home
