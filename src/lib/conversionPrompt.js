@@ -17,7 +17,7 @@ OUTPUT SCHEMA:
   "test": {
     "title": "title from the source or descriptive title",
     "description": "brief description if available",
-    "time_limit_minutes": 30,
+    "time_limit_minutes": 0,
     "exercises": [
       {
         "id": "A",
@@ -62,6 +62,8 @@ RULES:
    - RULE: When *** and another blank (..., __, etc.) appear in the same question, each becomes a separate blank in the "blanks" array, in order from left to right.
    - EXAMPLE: "2. *** there ... be a supermarket?" → prompt = "___ there ___ be a supermarket?", blanks = [{accepted: ["Did"]}, {accepted: ["use to"]}]
    - EXAMPLE: "5. *** Rick ... have blond hair?" → prompt = "___ Rick ___ have blond hair?", blanks = [{accepted: ["Did"]}, {accepted: ["use to"]}]
+
+10. TIME LIMIT: Set "time_limit_minutes" to the TOTAL number of questions across ALL exercises. For example, if the test has 3 exercises with 10, 15, and 10 questions respectively, set time_limit_minutes to 35. Count every individual question/answerable item (each fill-blank, each multiple-choice, each rewrite, each circle, each error-correction, etc.).
 
 EXERCISE TYPES — detect these from the source and use the matching type:
 
