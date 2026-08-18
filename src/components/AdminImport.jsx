@@ -485,9 +485,7 @@ export default function AdminImport({ onImportComplete, onBack, reimportTitle })
               <div className="admin-preview-header">
                 <h3>{testTitle || parsedBlob.test.title}</h3>
                 {parsedBlob.test.description && <p>{parsedBlob.test.description}</p>}
-                {parsedBlob.test.time_limit_minutes && (
-                  <span className="admin-preview-time">⏱ {parsedBlob.test.time_limit_minutes} minutes</span>
-                )}
+                <span className="admin-preview-time">⏱ {parsedBlob.test.exercises.reduce((s, ex) => s + (ex.questions?.length || 0), 0)} minutes (auto-calculated)</span>
               </div>
               {parsedBlob.test.exercises.map((exercise) => (
                 <ExerciseRenderer

@@ -128,7 +128,7 @@ export default function TestList({ onSelectTest, onGoAdmin, onReimport, isAdmin 
                       <span>
                         {blob.test.exercises.reduce((s, ex) => s + ex.questions.length, 0)} questions
                       </span>
-                      <span>⏱ {blob.test.time_limit_minutes || 45} min</span>
+                      <span>⏱ {blob.test.exercises.reduce((s, ex) => s + ex.questions.length, 0)} min</span>
                     </div>
                     <div className="test-card-actions">
                       <button

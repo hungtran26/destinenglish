@@ -6,13 +6,14 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 
 /**
  * Renders a FormattedText value (string or segments array).
+ * Handles both segment objects and **markdown bold** in plain strings.
  */
 function FormattedTextDisplay({ value, className }) {
   if (!value) return null
 
-  // Plain string
+  // Plain string — parse **bold** markdown as fallback
   if (typeof value === "string") {
-    return <span className={className}>{value}</span>
+    return <span className={className}>{renderMarkdownBold(value)}</span>
   }
 
   // Direct segments array
@@ -46,6 +47,47 @@ function FormattedTextDisplay({ value, className }) {
   }
 
   return <span className={className}>{String(value)}</span>
+}
+
+/**
+ * Parse **bold** markdown in a string and return React elements.
+ * Also handles *italic* and ***bold italic***.
+ */
+function renderMarkdownBold(text) {
+  if (!text || typeof text !== "string") return text
+
+  // Match ***bold italic***, **bold**, or *italic* — non-greedy
+  const regex = /(\*{3}(.+?)\*{3}|\*{2}(.+?)\*{2}|\*(.+?)\*)/g
+  const parts = []
+  let lastIndex = 0
+  let match
+
+  while ((match = regex.exec(text)) !== null) {
+    // Text before this match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+
+    if (match[2]) {
+      // ***bold italic***
+      parts.push(<strong key={`bi-${match.index}`}><em>{match[2]}</em></strong>)
+    } else if (match[3]) {
+      // **bold**
+      parts.push(<strong key={`b-${match.index}`}>{match[3]}</strong>)
+    } else if (match[4]) {
+      // *italic*
+      parts.push(<em key={`i-${match.index}`}>{match[4]}</em>)
+    }
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex))
+  }
+
+  return parts.length > 0 ? parts : text
 }
 
 /**

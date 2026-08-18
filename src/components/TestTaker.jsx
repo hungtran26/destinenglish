@@ -10,7 +10,10 @@ import heroImg from '../assets/hero.png'
  */
 export default function TestTaker({ testData, onComplete, onBack }) {
   const exercises = testData.test.exercises
-  const totalTime = (testData.test.time_limit_minutes || 45) * 60
+
+  // Auto-calculate time limit: 1 minute per question
+  const totalQuestions = exercises.reduce((sum, ex) => sum + (ex.questions?.length || 0), 0)
+  const totalTime = totalQuestions * 60
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0)
   const [answers, setAnswers] = useState({})

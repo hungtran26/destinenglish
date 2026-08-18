@@ -44,6 +44,7 @@ RULES:
 4. BOLD TEXT: If the source image shows bold words/phrases, identify them using formatted text segments:
    { "segments": [{ "text": "normal " }, { "text": "bold word", "bold": true }, { "text": " normal" }] }
    For plain text with no formatting, a simple string is fine.
+   CRITICAL: You MUST use the segments format for any bold/italic text. Do NOT use markdown **bold** syntax. The segments format is the ONLY way bold is rendered. If you output **bold** as a plain string, the bold formatting will be lost.
 
 5. INTENTIONALLY INCORRECT TEXT: Do NOT correct errors in the source. If the source says "am loving" and that is intentionally wrong, keep it as "am loving" in the displayed text. The student must identify the error themselves. The answer key provides the correction separately.
 
@@ -52,6 +53,15 @@ RULES:
 7. EXERCISE LETTERS: Use the exercise letter as the "id" (e.g., "A", "B", "C").
 
 8. QUESTION IDs: Each question must have a unique numeric "id" starting from 1 within each exercise.
+
+9. *** BLANK HANDLING (CRITICAL): In the source text, *** represents a blank (same as ___, __, or ...). *** is NEVER a separate question. It is always part of the question it appears in.
+   - RULE: If *** appears at the start of a question line (e.g., "2. *** there ... be a supermarket?"), the *** is a blank that belongs to question 2. It becomes the FIRST blank in that question.
+   - RULE: If *** appears mid-question (e.g., "9. some toast into the toaster and *** the fridge"), it is a blank within that same question.
+   - RULE: NEVER create a separate question for ***. It is always merged into its parent question.
+   - RULE: Convert all *** to ___ in the prompt/passage text. The student sees ___, not ***.
+   - RULE: When *** and another blank (..., __, etc.) appear in the same question, each becomes a separate blank in the "blanks" array, in order from left to right.
+   - EXAMPLE: "2. *** there ... be a supermarket?" → prompt = "___ there ___ be a supermarket?", blanks = [{accepted: ["Did"]}, {accepted: ["use to"]}]
+   - EXAMPLE: "5. *** Rick ... have blond hair?" → prompt = "___ Rick ___ have blond hair?", blanks = [{accepted: ["Did"]}, {accepted: ["use to"]}]
 
 EXERCISE TYPES — detect these from the source and use the matching type:
 
